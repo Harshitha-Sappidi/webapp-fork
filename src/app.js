@@ -9,4 +9,9 @@ app.use(express.json()).use(express.text()).use(express.urlencoded({ extended: t
 // Use routes
 app.use('/', routes);
 
+// For all undefined routes
+app.use('*', (req, res) => {
+    res.status(404).send();
+});
+
 module.exports = app;
