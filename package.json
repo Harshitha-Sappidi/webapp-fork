@@ -4,7 +4,8 @@
   "description": "A health check API project following cloud-native principles.",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/server.js"
+    "start": "nodemon src/server.js",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -13,8 +14,13 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mysql2": "^3.12.0",
+    "nodemon": "^3.1.9",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }
