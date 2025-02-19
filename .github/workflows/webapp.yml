@@ -22,22 +22,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-server
           sudo systemctl start mysql
+          echo ${{ secrets.DB_USER }}
+          echo ${{ secrets.DB_PASSWORD }}
+          echo ${{ secrets.DB_NAME }}
+          mysql -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};" -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }}
 
-      - name: Configure MySQL Database
-        run: |
-          sudo mysql -u root -p ${{ secrets.DB_PASSWORD }} -e "
-          CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
-          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
-          GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }}'@'localhost';
-          FLUSH PRIVILEGES;"
+      # - name: Configure MySQL Database
+      #   run: |
+      #     sudo mysql -u root -p ${{ secrets.DB_PASSWORD }} -e "
+      #     CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
+      #     CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
+      #     GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }}'@'localhost';
+      #     FLUSH PRIVILEGES;"
 
       - name: Configure Environment Variables
         run: |
-          echo "DB_HOST=localhost" >> .env  
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env  
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "DB_PORT=3306" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "PORT=${{ secrets.PORT }}" >> .env
 
       - name: Install Dependencies
