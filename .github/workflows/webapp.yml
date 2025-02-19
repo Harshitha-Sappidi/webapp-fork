@@ -15,34 +15,34 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "23.7.0"
+          node-version: "20"
 
       - name: Install MySQL
         run: |
           sudo apt-get update
           sudo apt-get install -y mysql-server
           sudo systemctl start mysql
+          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${{ secrets.DB_PASSWORD }}'; FLUSH PRIVILEGES;"
 
       - name: Configure MySQL Database
         run: |
-          sudo mysql -u root -p -e "
-            CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
-            CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'${{ secrets.DB_HOST }}' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
-            GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }'@'${{ secrets.DB_HOST }}';
-            FLUSH PRIVILEGES;"
+          sudo mysql -u root -p${{ secrets.DB_PASSWORD }} -e "
+          CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
+          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
+          GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }}'@'localhost';
+          FLUSH PRIVILEGES;"
 
       - name: Configure Environment Variables
         run: |
-          echo DB_HOST=${{ secrets.DB_HOST }}>> .env  # MySQL runs on localhost
-          echo DB_USER=${{ secrets.DB_USER }} >> .env
-          echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
-          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
-          echo DB_PORT=${{ secrets.DB_PORT }} >> .env
-          echo PORT=${{ secrets.PORT }} >> .env
+          echo "DB_HOST=localhost" >> .env  
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
 
       - name: Install Dependencies
         run: npm install
 
       - name: Run Tests
         run: npm test
-
