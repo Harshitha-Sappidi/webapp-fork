@@ -34,6 +34,7 @@ jobs:
 
       - name: Configure MySQL Database
         run: |
+          sudo systemctl start mysql
           sudo mysql -u ${{ secrets.DB_USER }} -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};"
           
 
