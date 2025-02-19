@@ -7,19 +7,6 @@ on:
 jobs:
   CI:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.DB_NAME }}
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
 
     steps:
       - name: Checkout Repository
@@ -30,12 +17,23 @@ jobs:
         with:
           node-version: "23.7.0"
 
+      - name: Install MySQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-server
+          sudo systemctl start mysql
+
+      - name: Configure MySQL Database
+        run: |
+          sudo mysql -u root -p -e "
+            CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
+            CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'${{ secrets.DB_HOST }}' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
+            GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }'@'${{ secrets.DB_HOST }}';
+            FLUSH PRIVILEGES;"
+
       - name: Configure Environment Variables
         run: |
-          echo > .env
-          ls -al | grep .env
-          echo NODE_ENV=${{ secrets.NODE_ENV }} >> .env
-          echo DB_HOST=127.0.0.1 >> .env  # Using MySQL service from GitHub Actions
+          echo DB_HOST=${{ secrets.DB_HOST }}>> .env  # MySQL runs on localhost
           echo DB_USER=${{ secrets.DB_USER }} >> .env
           echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
           echo DB_NAME=${{ secrets.DB_NAME }} >> .env
