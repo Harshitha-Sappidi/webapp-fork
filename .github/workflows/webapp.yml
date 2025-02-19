@@ -12,12 +12,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Print MySQL Credentials (for debugging)
-        run: |
-          echo "DB_USER: ${{ secrets.DB_USER }}"
-          echo "DB_HOST: ${{ secrets.DB_HOST }}"
-          echo "DB_NAME: ${{ secrets.DB_NAME }}"
-
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
@@ -31,7 +25,7 @@ jobs:
       - name: Wait for MySQL
         run: |
           echo "Waiting for MySQL to start..."
-          sleep 15
+          sleep 10
           sudo mysql -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
           
       - name: Configure Environment Variables
@@ -46,5 +40,5 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Tests
+      - name: Run Integration Tests
         run: npm test

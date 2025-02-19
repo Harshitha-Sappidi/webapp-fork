@@ -10,6 +10,8 @@ describe("Health Check API Tests", () => {
   });
 
   afterAll(async () => {
+    // Cleanup: Remove all records from the health check table
+    await db.destroy({ where: {}, truncate: true, restartIdentity: true });
     // Closing database connection to prevent open handles
     await db.sequelize.close();
   });

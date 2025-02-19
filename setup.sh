@@ -38,11 +38,6 @@ sudo apt install unzip -y
 echo "Extracting application files..."
 sudo unzip /tmp/webapp.zip -d /opt/csye6225
 
-# Set ownership and permissions for the extracted files
-echo "Updating file permissions..."
-sudo chown -R testuser:testgroup /opt/csye6225
-sudo chmod -R 750 /opt/csye6225
-
 # Navigate to application directory
 cd /opt/csye6225/webapp
 
