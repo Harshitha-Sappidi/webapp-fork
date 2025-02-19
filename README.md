@@ -116,3 +116,15 @@ sudo mysql -u root -p -e "
 
 ##### Runs API tests and starts the application.
 - npm run test & npm run start
+
+### Implementing CI with GitHub Actions for a Web App
+
+#### Step 1: Create a GitHub Actions Workflow
+- Go to .github/workflows/, create file
+
+#### Step 2: Ensure PRs Require Successful CI Runs
+- Go to your GitHub repository Settings → Branches.
+- Under Branch Protection Rules, click Add Rule.
+  
+#### Step 3: Enforce CI Checks on Pull Requests
+- Whenever a developer raises a PR, the GitHub Actions workflow will automatically run the tests.
