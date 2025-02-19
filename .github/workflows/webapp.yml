@@ -26,6 +26,7 @@ jobs:
       - name: Configure MySQL Database
         run: |
           sudo systemctl start mysql
+          sudo systemctl restart mysql
           sudo systemctl status mysql
 
       - name: Wait for MySQL
