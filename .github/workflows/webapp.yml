@@ -22,9 +22,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-server
           sudo systemctl start mysql
-          echo ${{ secrets.DB_USER }}
-          echo ${{ secrets.DB_PASSWORD }}
-          echo ${{ secrets.DB_NAME }}
+          echo "${{ secrets.DB_USER }}"
+          echo "${{ secrets.DB_NAME }}"
+          echo "${{ secrets.DB_PASSWORD }}"
           mysql -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};" -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }}
 
       # - name: Configure MySQL Database
