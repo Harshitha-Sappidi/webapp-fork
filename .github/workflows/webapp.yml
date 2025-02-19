@@ -12,32 +12,30 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Print MySQL Credentials (for debugging)
-        run: |
-          echo "DB_USER: ${{ secrets.DB_USER }}"
-          echo "DB_HOST: ${{ secrets.DB_HOST }}"
-          echo "DB_NAME: ${{ secrets.DB_NAME }}"
-
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "20"
 
-      - name: Configure MySQL Database
+      - name: Install MySQL
         run: |
-          sudo systemctl restart mysql
-          sudo systemctl status mysql
+          sudo apt-get update
+          sudo apt-get install -y mysql-server
+          sudo systemctl start mysql
+          sudo systemctl status mysql || true
 
-      - name: Wait for MySQL
+      - name: Set up MySQL Database and User
         run: |
           echo "Waiting for MySQL to start..."
-          sleep 15
-          sudo mysql -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
+          sleep 10
           
+          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${{ secrets.DB_PASSWORD }}';"
+          sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
+
       - name: Configure Environment Variables
         run: |
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env  
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env  
+          echo "DB_USER=root" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
