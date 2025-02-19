@@ -22,11 +22,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mysql-server
           sudo systemctl start mysql
-          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${{ secrets.DB_PASSWORD }}'; FLUSH PRIVILEGES;"
 
       - name: Configure MySQL Database
         run: |
-          sudo mysql -u root -p${{ secrets.DB_PASSWORD }} -e "
+          sudo mysql -u root -p ${{ secrets.DB_PASSWORD }} -e "
           CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
           CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
           GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }}'@'localhost';
