@@ -17,23 +17,25 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install MySQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-server
-          sudo systemctl start mysql
-          echo "${{ secrets.DB_USER }}"
-          echo "${{ secrets.DB_NAME }}"
-          echo "${{ secrets.DB_PASSWORD }}"
-          mysql -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};" -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }}
+      # - name: Install MySQL
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y mysql-server
+      #     sudo systemctl start mysql
+      #     mysql -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};" -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }}
 
       # - name: Configure MySQL Database
       #   run: |
-      #     sudo mysql -u root -p ${{ secrets.DB_PASSWORD }} -e "
+      #     sudo mysql -u ${{ secrets.DB_USER }} -p ${{ secrets.DB_PASSWORD }} -e "
       #     CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
       #     CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
       #     GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }}'@'localhost';
       #     FLUSH PRIVILEGES;"
+
+      - name: Configure MySQL Database
+        run: |
+          sudo mysql -u ${{ secrets.DB_USER }} -p ${{ secrets.DB_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};"
+          
 
       - name: Configure Environment Variables
         run: |
