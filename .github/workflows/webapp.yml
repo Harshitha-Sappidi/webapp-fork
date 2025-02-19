@@ -7,56 +7,6 @@ on:
 jobs:
   CI:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.DB_NAME }}
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "23.7.0"
-
-      - name: Configure Environment Variables
-        run: |
-          echo > .env
-          ls -al | grep .env
-          echo NODE_ENV=${{ secrets.NODE_ENV }} >> .env
-          echo DB_HOST=127.0.0.1 >> .env  # Using MySQL service from GitHub Actions
-          echo DB_USER=${{ secrets.DB_USER }} >> .env
-          echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
-          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
-          echo DB_PORT=${{ secrets.DB_PORT }} >> .env
-          echo PORT=${{ secrets.PORT }} >> .env
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run Tests
-        run: npm test
-
-name: Node.js CI with MySQL
-
-on:
-  pull_request:
-    branches: ["main"]
-
-jobs:
-  CI:
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
