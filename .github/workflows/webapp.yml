@@ -26,12 +26,10 @@ jobs:
       - name: Configure MySQL Database
         run: |
           sudo mysql -u root -p -e "
-          CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
-          CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'${{ secrets.DB_HOST }}' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
-          GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }'@'${{ secrets.DB_HOST }}';
-          FLUSH PRIVILEGES;"
-
-
+            CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_NAME }};
+            CREATE USER IF NOT EXISTS '${{ secrets.DB_USER }}'@'${{ secrets.DB_HOST }}' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';
+            GRANT ALL PRIVILEGES ON ${{ secrets.DB_NAME }}.* TO '${{ secrets.DB_USER }'@'${{ secrets.DB_HOST }}';
+            FLUSH PRIVILEGES;"
 
       - name: Configure Environment Variables
         run: |
