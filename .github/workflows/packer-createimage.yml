@@ -1,12 +1,15 @@
 name: Packer Create Image for Node.js App
 
 on:
-  push:
+ pull_request:
     branches:
-      - main  # Trigger workflow on push to the main branch
-  pull_request:
-    types:
-      - closed  # Trigger workflow only when a pull request is closed
+      - main
+  # push:
+  #   branches:
+  #     - main  # Trigger workflow on push to the main branch
+  # pull_request:
+  #   types:
+  #     - closed  # Trigger workflow only when a pull request is closed
 
 jobs:
   packer-buildimage:
@@ -89,57 +92,6 @@ jobs:
         run: |
           cd packer
           packer init .
-          packer build -machine-readable image.pkr.hcl | tee packer.log
-
-          SOURCE_AMI=$(awk -F, '/artifact,0,id/ {print $6}' packer.log | cut -d: -f2)
-          GCP_PROJECT=$(awk -F, '/artifact,1,id/ {print $6}' packer.log | cut -d: -f2)
-          
-          if [ -n "$AMI_ID" ]; then
-            echo "ami_id=$AMI_ID" >> $GITHUB_ENV
-            echo "AMI_CREATED=true" >> $GITHUB_ENV
-          else
-            echo "AMI_CREATED=false" >> $GITHUB_ENV
-          fi
-
-          if [ -n "$GCP_PROJECT" ]; then
-            echo "gcp_image_id=$GCP_PROJECT" >> $GITHUB_ENV
-          fi
-
-      - name: Share AMI with Demo Account
-        if: env.AMI_CREATED == 'true'
-        run: |
-          aws ec2 modify-image-attribute \
-            --image-id ${{ env.ami_id }} \
-            --launch-permission "{\"Add\":[{\"UserId\":\"${{ secrets.DEMO_ACCOUNT_ID }}\"]}"
-
-      - name: Share GCP Machine Image
-        run: |
-          gcloud compute images add-iam-policy-binding ${{ env.gcp_image_id }} \
-            --member="user:${{ secrets.DEMO_GCP_USER }}" \
-            --role="roles/compute.imageUser"
-
-      - name: Update AWS Launch Template
-        run: |
-          aws ec2 create-launch-template-version \
-            --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
-            --source-version "\$Latest" \
-            --version-description "Updated with latest AMI ID" \
-            --launch-template-data "{\"ImageId\": \"${{ env.ami_id }}\"}"
-
-          aws ec2 modify-launch-template \
-            --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
-            --default-version "\$Latest"
-            
-      - name: Update GCP Instance Template
-        run: |
-          gcloud compute instance-templates create "my-template-${{ github.run_id }}" \
-            --machine-type=n1-standard-1 \
-            --image=${{ env.gcp_image_id }} \
-            --tags=http-server,https-server \
-            --boot-disk-size=20GB \
-            --metadata=startup-script='#! /bin/bash
-            sudo systemctl daemon-reload
-            sudo systemctl enable myapp
-            sudo systemctl start myapp
-
+          packer build .
+         
 
