@@ -80,12 +80,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      # Install Packer for building custom images
-      - name: Install Packer
-        run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install -y packer
+       # Install Packer using the official GitHub Action
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
 
       # Building a custom image for AWS & GCP in parallel using Packer
       - name: Build Custom Image with Packer
