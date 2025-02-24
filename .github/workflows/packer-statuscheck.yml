@@ -21,21 +21,22 @@ jobs:
         with:
           version: latest
 
-      - name: Run Packer Fmt
-        id: fmt
+      - name: Format check Packer
         run: |
+          cd packer
+          CHANGES=$(git diff --name-only)
           packer fmt -check .
-        continue-on-error: true
-
-      - name: Fail if Packer Fmt Modified Files
-        run: |
-          if [[ $(git status --porcelain) ]]; then
-            echo "Packer fmt modified files. Please run 'packer fmt' locally."
+          if [ $? -ne 0 ]; then
+            echo "Packer template was modified by 'packer fmt' command."
+            echo "$CHANGES"
             exit 1
           fi
 
-      - name: Run Packer Validate
+      - name: Validate Packer
         run: |
+          cd packer
           packer validate .
-
-
+          if [ $? -ne 0 ]; then
+            echo "Packer template validation failed."
+            exit 1
+          fi
