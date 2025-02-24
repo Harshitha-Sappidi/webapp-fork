@@ -1,0 +1,60 @@
+name: Packer Status Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  packer-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Zip Web App
+        run: |
+          zip -r webapp.zip packer
+          mv webapp.zip packer/
+
+      - name: Create .env file
+        run: |
+          echo "MYSQL_DB_USERNAME=${{ secrets.DB_USER }}" >> .env
+          echo "MYSQL_DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "MYSQL_DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "MYSQL_DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "MYSQL_DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          cat .env
+          mv .env packer
+
+      - name: Install Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: latest
+   
+      - name: Initialize Packer
+        run: |
+          cd packer
+          packer init .   
+
+      - name: Format check Packer
+        run: |
+          cd packer
+          CHANGES=$(git diff --name-only)
+          packer fmt -check .
+          if [ $? -ne 0 ]; then
+            echo "Packer template was modified by 'packer fmt' command."
+            echo "$CHANGES"
+            exit 1
+          fi
+
+      - name: Validate Packer
+        run: |
+          cd packer
+          packer validate .
+          if [ $? -ne 0 ]; then
+            echo "Packer template validation failed."
+            exit 1
+          fi
