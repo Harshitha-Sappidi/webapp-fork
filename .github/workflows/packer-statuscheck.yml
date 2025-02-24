@@ -15,7 +15,7 @@ jobs:
 
       - name: Zip Web App
         run: zip -r webapp.zip ./
-        
+
       - name: Install Packer
         uses: hashicorp/setup-packer@main
         with:
@@ -37,3 +37,5 @@ jobs:
       - name: Run Packer Validate
         run: |
           packer validate .
+
+
