@@ -83,6 +83,18 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
+      - name: Create .env file
+        run: |
+          echo "MYSQL_DB_USERNAME=${{ secrets.DB_USER }}" >> .env
+          echo "MYSQL_DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "MYSQL_DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "MYSQL_DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "MYSQL_DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          cat .env
+          mv .env packer
+
+
        # Install Packer using the official GitHub Action
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
