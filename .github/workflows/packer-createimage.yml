@@ -89,7 +89,7 @@ jobs:
         run: |
           cd packer
           packer init .
-          packer build -var-file=variable.pkr.hcl image.pkr.hcl
+          packer build -machine-readable image.pkr.hcl | tee packer.log
 
           SOURCE_AMI=$(awk -F, '/artifact,0,id/ {print $6}' packer.log | cut -d: -f2)
           GCP_PROJECT=$(awk -F, '/artifact,1,id/ {print $6}' packer.log | cut -d: -f2)
