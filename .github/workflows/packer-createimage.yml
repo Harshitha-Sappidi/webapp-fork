@@ -1,7 +1,7 @@
 name: Packer Create Image for Node.js App
 
 on:
- pull_request:
+  pull_request:
     branches:
       - main
   # push:
@@ -14,7 +14,7 @@ on:
 jobs:
   packer-buildimage:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'push' 
+    #if: github.event.pull_request.merged == true || github.event_name == 'push' 
 
     steps:
       # Checkout the repository code
