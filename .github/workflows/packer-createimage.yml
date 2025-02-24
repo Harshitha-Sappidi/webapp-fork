@@ -3,36 +3,41 @@ name: Packer Create Image for Node.js App
 on:
   push:
     branches:
-      - main
+      - main  # Trigger workflow on push to the main branch
   pull_request:
     types:
-      - closed
+      - closed  # Trigger workflow only when a pull request is closed
 
 jobs:
   packer-buildimage:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    if: github.event.pull_request.merged == true || github.event_name == 'push' 
 
     steps:
+      # Checkout the repository code
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          
+
+      # Start MySQL Service (for integration tests)
       - name: Configure MySQL Database
         run: |
           sudo systemctl start mysql
           sudo systemctl status mysql
 
+      # Wait for MySQL to be fully up and running
       - name: Wait for MySQL
         run: |
           echo "Waiting for MySQL to start..."
           sleep 10
           sudo mysql -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
-          
+
+      # Configure environment variables required for the application
       - name: Configure Environment Variables
         run: |
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env  
@@ -42,55 +47,53 @@ jobs:
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "PORT=${{ secrets.PORT }}" >> .env
 
+      # Install application dependencies
       - name: Install Dependencies
         run: npm install
 
+      # Run integration tests (workflow fails if tests fail)
       - name: Run Integration Tests
         run: npm test  
 
+      #  Building the application artifact
       - name: Build Application Artifact
         run: |
           mkdir -p build
           zip -r build/webapp.zip . -x "node_modules/*" ".git/*"
 
+      # Moving the artifact to the Packer directory
       - name: Move Web App to Packer Directory
         run: |
           mv build/webapp.zip packer/
 
+      # Set up AWS CLI for authentication
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
+      # Authenticate with Google Cloud
       - name: Set up Google Cloud SDK
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      - name: Install AWS & GCP CLI
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y unzip curl
-          curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
-          sudo installer -pkg AWSCLIV2.pkg -target /
-          curl -sSL https://sdk.cloud.google.com | bash
-
+      # Install Packer for building custom images
       - name: Install Packer
-        uses: hashicorp/setup-packer@main
-        with:
-          version: latest
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install -y packer
 
-      - name: Initialize Packer
+      # Building a custom image for AWS & GCP in parallel using Packer
+      - name: Build Custom Image with Packer
         run: |
           cd packer
           packer init .
-
-      - name: Build Custom Image in AWS & GCP
-        run: |
-          cd packer
           packer build -var "aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
                        -var "aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
                        -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
                        image.pkr.hcl
+
