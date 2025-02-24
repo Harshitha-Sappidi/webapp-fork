@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Update package list and install necessary dependencies
+sudo apt-get update -y
+sudo apt-get install -y unzip curl
+
+# Install Node.js and npm (LTS version) for the application
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Verify Node.js and npm installation by checking their versions
+node -v
+npm -v
+
+# Create a system user for the application (non-login user for security)
+sudo useradd -r -s /usr/sbin/nologin -m csye6225
+
+# Setup application directory and extract the webapp
+sudo mkdir -p /opt/csye6225
+sudo unzip /tmp/webapp.zip -d /opt/csye6225
+sudo mv /tmp/.env /opt/csye6225/webapp
+
+# Change ownership and permissions for the application folder
+# The 'csye6225' user should own the directory for security, and read/write/execute permissions are set
+echo "Changing Permissions"
+sudo chown -R csye6225:csye6225 /opt/csye6225/webapp
+sudo chmod -R 755 /opt/csye6225/webapp
+
+# Clean up by removing the webapp.zip file after extraction
+rm /tmp/webapp.zip 
+
+# Install Node.js dependencies for the webapp
+
+cd /opt/csye6225/webapp || exit  # Exit if directory doesn't exist
+sudo -u csye6225 npm install
+
+# Install MySQL database server
+sudo apt-get update
+sudo apt-get install -y mysql-server
+
+# Start MySQL service and verify its status
+sudo systemctl start mysql
+sudo systemctl status mysql
+sleep 10
+
+# Secure MySQL installation
+sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';"
+sudo mysql -e "FLUSH PRIVILEGES; EXIT;"
+# Create the sample database if it doesn't already exist
+sudo mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`sample_db\`;"
+
+# Restart MySQL service to apply any configuration changes
+sudo systemctl restart mysql
+
+# Move the service configuration file to systemd's directory and reload the systemd manager to recognize it
+sudo mv /tmp/webapp.service /etc/systemd/system
+sudo systemctl daemon-reload
+
+# Restart, enable, and check the status of the webapp service
+sudo systemctl restart webapp.service
+sudo systemctl enable webapp.service
+sudo systemctl status webapp.service
