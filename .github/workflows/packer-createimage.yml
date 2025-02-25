@@ -63,12 +63,11 @@ jobs:
 
       - name: Zip Web App
         run: |
-          ls -al 
           mkdir webapp                     
           cp -r $(ls -A | grep -v '^webapp$') webapp/                
           zip -r webapp.zip webapp -x "webapp/node_modules/*" "webapp/.git/*" 
           mv webapp.zip packer/            
-
+          ls -al 
 
       # Set up AWS CLI for authentication
       - name: Set up AWS CLI
@@ -98,5 +97,23 @@ jobs:
         run: |
           cd packer
           packer build .
+
+          AMI_ID=$(awk -F, '/artifact,0,id/ {print $6}' packer.log | cut -d: -f2)
+          
+          if [ -n "$AMI_ID" ]; then
+            echo "New AMI created: $AMI_ID"
+            echo "AMI_CREATED=true" >> $GITHUB_OUTPUT
+            echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+          else
+            echo "No new AMI was created"
+            echo "AMI_CREATED=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Share AMI with Demo Account
+        if: steps.packer.outputs.AMI_CREATED == 'true'
+        run: |
+          aws ec2 modify-image-attribute \
+            --image-id ${{ steps.packer.outputs.AMI_ID }} \
+            --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}
          
 
