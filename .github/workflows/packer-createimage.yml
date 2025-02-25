@@ -116,8 +116,5 @@ jobs:
       - name: Share AMI with Demo Account
         if: steps.packer.outputs.AMI_CREATED == 'true'
         run: |
-          aws ec2 modify-image-attribute \
-            --image-id ${{ steps.packer.outputs.AMI_ID }} \
-            --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}
-         
+          aws ec2 modify-image-attribute --image-id ${{ steps.packer.outputs.AMI_ID }} --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}'
 
