@@ -110,9 +110,6 @@ jobs:
             echo "AMI_CREATED=false" >> $GITHUB_OUTPUT
           fi
 
-          echo "AMI : ${{ steps.packer.outputs.AMI_ID }}"
-          echo "AMI_CREATED: ${{ steps.packer.outputs.AMI_CREATED }}"
-
       - name: Share AMI with Demo Account
         if: steps.packer.outputs.AMI_CREATED == 'true'
         run: |
