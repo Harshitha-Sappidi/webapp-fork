@@ -63,9 +63,12 @@ jobs:
 
       - name: Zip Web App
         run: |
-          ls -al ./
-          zip -r webapp.zip * -x "node_modules/*" ".git/*"
-          mv webapp.zip packer/
+          ls -al 
+          mkdir webapp                     
+          cp -r * webapp/                   
+          zip -r webapp.zip webapp -x "webapp/node_modules/*" "webapp/.git/*" 
+          mv webapp.zip packer/            
+
 
       # Set up AWS CLI for authentication
       - name: Set up AWS CLI
