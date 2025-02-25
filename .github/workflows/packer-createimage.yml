@@ -98,8 +98,8 @@ jobs:
           cd packer
           packer build .
 
-          AMI_ID=$(awk -F, '/artifact,0,id/ {print $6}' packer.log | cut -d: -f2)
-          
+          AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
+
           if [ -n "$AMI_ID" ]; then
             echo "New AMI created: $AMI_ID"
             echo "AMI_CREATED=true" >> $GITHUB_OUTPUT
