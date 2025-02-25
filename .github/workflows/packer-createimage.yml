@@ -3,15 +3,10 @@ name: Packer Create Image for Node.js App
 on:
   push:
     branches:
-      - main  # Trigger workflow on push to the main branch
-  pull_request:
-    types:
-      - closed  # Trigger workflow only when a pull request is closed
-
+       - main 
 jobs:
   packer-buildimage:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'push' 
 
     steps:
       # Checkout the repository code
@@ -46,6 +41,9 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "PORT=${{ secrets.PORT }}" >> .env
+          ls -al
+          cat .env
+          cp .env packer/
 
       # Install application dependencies
       - name: Install Dependencies
@@ -55,16 +53,13 @@ jobs:
       - name: Run Integration Tests
         run: npm test  
 
-      #  Building the application artifact
-      - name: Build Application Artifact
+      - name: Zip Web App
         run: |
-          mkdir -p build
-          zip -r build/webapp.zip . -x "node_modules/*" ".git/*"
-
-      # Moving the artifact to the Packer directory
-      - name: Move Web App to Packer Directory
-        run: |
-          mv build/webapp.zip packer/
+          mkdir webapp                     
+          cp -r $(ls -A | grep -v '^webapp$') webapp/                
+          zip -r webapp.zip webapp -x "webapp/node_modules/*" "webapp/.git/*" 
+          mv webapp.zip packer/            
+          ls -al 
 
       # Set up AWS CLI for authentication
       - name: Set up AWS CLI
@@ -84,62 +79,31 @@ jobs:
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
 
-      # Building a custom image for AWS & GCP in parallel using Packer
-      - name: Build Custom Image with Packer
+      - name: Initialize Packer
         run: |
           cd packer
-          packer init .
-          packer build -machine-readable image.pkr.hcl | tee packer.log
+          packer init .  
 
-          SOURCE_AMI=$(awk -F, '/artifact,0,id/ {print $6}' packer.log | cut -d: -f2)
-          GCP_PROJECT=$(awk -F, '/artifact,1,id/ {print $6}' packer.log | cut -d: -f2)
-          
+      # Building a custom image for AWS & GCP in parallel using Packer
+      - name: Build Custom Image with Packer
+        id: packer
+        run: |
+          cd packer
+          packer build .
+
+          AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
+
           if [ -n "$AMI_ID" ]; then
-            echo "ami_id=$AMI_ID" >> $GITHUB_ENV
-            echo "AMI_CREATED=true" >> $GITHUB_ENV
+            echo "New AMI created: $AMI_ID"
+            echo "AMI_CREATED=true" >> $GITHUB_OUTPUT
+            echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
           else
-            echo "AMI_CREATED=false" >> $GITHUB_ENV
-          fi
-
-          if [ -n "$GCP_PROJECT" ]; then
-            echo "gcp_image_id=$GCP_PROJECT" >> $GITHUB_ENV
+            echo "No new AMI was created"
+            echo "AMI_CREATED=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Share AMI with Demo Account
-        if: env.AMI_CREATED == 'true'
+        if: steps.packer.outputs.AMI_CREATED == 'true'
         run: |
-          aws ec2 modify-image-attribute \
-            --image-id ${{ env.ami_id }} \
-            --launch-permission "{\"Add\":[{\"UserId\":\"${{ secrets.DEMO_ACCOUNT_ID }}\"]}"
-
-      - name: Share GCP Machine Image
-        run: |
-          gcloud compute images add-iam-policy-binding ${{ env.gcp_image_id }} \
-            --member="user:${{ secrets.DEMO_GCP_USER }}" \
-            --role="roles/compute.imageUser"
-
-      - name: Update AWS Launch Template
-        run: |
-          aws ec2 create-launch-template-version \
-            --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
-            --source-version "\$Latest" \
-            --version-description "Updated with latest AMI ID" \
-            --launch-template-data "{\"ImageId\": \"${{ env.ami_id }}\"}"
-
-          aws ec2 modify-launch-template \
-            --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
-            --default-version "\$Latest"
-            
-      - name: Update GCP Instance Template
-        run: |
-          gcloud compute instance-templates create "my-template-${{ github.run_id }}" \
-            --machine-type=n1-standard-1 \
-            --image=${{ env.gcp_image_id }} \
-            --tags=http-server,https-server \
-            --boot-disk-size=20GB \
-            --metadata=startup-script='#! /bin/bash
-            sudo systemctl daemon-reload
-            sudo systemctl enable myapp
-            sudo systemctl start myapp
-
+          aws ec2 modify-image-attribute --image-id ${{ steps.packer.outputs.AMI_ID }} --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}'
 
