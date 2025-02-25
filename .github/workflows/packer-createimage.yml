@@ -1,20 +1,12 @@
 name: Packer Create Image for Node.js App
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-  # push:
-  #   branches:
-  #     - main  # Trigger workflow on push to the main branch
-  # pull_request:
-  #   types:
-  #     - closed  # Trigger workflow only when a pull request is closed
-
+       - main 
 jobs:
   packer-buildimage:
     runs-on: ubuntu-latest
-    #if: github.event.pull_request.merged == true || github.event_name == 'push' 
 
     steps:
       # Checkout the repository code
