@@ -51,6 +51,7 @@ jobs:
           echo "PORT=${{ secrets.PORT }}" >> .env
           ls -al
           cat .env
+          cp .env packer/
 
       # Install application dependencies
       - name: Install Dependencies
