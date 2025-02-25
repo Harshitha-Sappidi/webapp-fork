@@ -65,7 +65,7 @@ jobs:
         run: |
           ls -al 
           mkdir webapp                     
-          cp -r * webapp/                   
+          cp -r $(ls -A | grep -v '^webapp$') webapp/                
           zip -r webapp.zip webapp -x "webapp/node_modules/*" "webapp/.git/*" 
           mv webapp.zip packer/            
 
