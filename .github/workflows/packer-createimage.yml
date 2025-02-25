@@ -49,6 +49,8 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "PORT=${{ secrets.PORT }}" >> .env
+          cat .env
+          mv .env packer
 
       # Install application dependencies
       - name: Install Dependencies
@@ -58,22 +60,11 @@ jobs:
       - name: Run Integration Tests
         run: npm test  
 
-      # #  Building the application artifact
-      # - name: Build Application Artifact
-      #   run: |
-      #     mkdir -p build
-      #     zip -r build/webapp.zip . -x "node_modules/*" ".git/*"
-
-      # # Moving the artifact to the Packer directory
-      # - name: Move Web App to Packer Directory
-      #   run: |
-      #     mv build/webapp.zip packer/
-
       - name: Zip Web App
         run: |
-          zip -r webapp.zip packer
+          ls -al ./
+          zip -r webapp.zip * -x "node_modules/*" ".git/*"
           mv webapp.zip packer/
-
 
       # Set up AWS CLI for authentication
       - name: Set up AWS CLI
@@ -89,27 +80,19 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-      - name: Create .env file
-        run: |
-          echo "MYSQL_DB_USERNAME=${{ secrets.DB_USER }}" >> .env
-          echo "MYSQL_DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "MYSQL_DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "MYSQL_DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "MYSQL_DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "PORT=${{ secrets.PORT }}" >> .env
-          cat .env
-          mv .env packer
-
-
        # Install Packer using the official GitHub Action
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
+
+      - name: Initialize Packer
+        run: |
+          cd packer
+          packer init .  
 
       # Building a custom image for AWS & GCP in parallel using Packer
       - name: Build Custom Image with Packer
         run: |
           cd packer
-          packer init .
           packer build .
          
 

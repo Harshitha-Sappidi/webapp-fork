@@ -15,8 +15,10 @@ jobs:
 
       - name: Zip Web App
         run: |
-          zip -r webapp.zip packer
+          ls -al ./
+          zip -r webapp.zip * -x "node_modules/*" ".git/*"
           mv webapp.zip packer/
+
 
       - name: Create .env file
         run: |
