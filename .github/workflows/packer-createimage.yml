@@ -94,6 +94,7 @@ jobs:
 
       # Building a custom image for AWS & GCP in parallel using Packer
       - name: Build Custom Image with Packer
+        id: packer
         run: |
           cd packer
           packer build .
