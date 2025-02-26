@@ -1,9 +1,12 @@
 name: Packer Create Image for Node.js App
 
 on:
-  push:
+  pull_request:
     branches:
-       - main 
+      - main
+  # push:
+  #   branches:
+  #      - main 
 jobs:
   packer-buildimage:
     runs-on: ubuntu-latest
@@ -91,19 +94,39 @@ jobs:
           cd packer
           packer build .
 
-          AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
+          AWS_AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
+          
+          GCP_IMAGE_ID=$(gcloud compute images list --project ${{ secrets.GCP_PROJECT_ID }} --filter="name~webapp-" --sort-by="~creationTimestamp" --limit=1 --format="value(NAME)")
 
-          if [ -n "$AMI_ID" ]; then
-            echo "New AMI created: $AMI_ID"
-            echo "AMI_CREATED=true" >> $GITHUB_OUTPUT
-            echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+          if [ -n "$AWS_AMI_ID" ]; then
+            echo "New AMI created: $AWS_AMI_ID"
+            echo "AWS_AMI_CREATED=true" >> $GITHUB_OUTPUT
+            echo "AWS_AMI_ID=$AWS_AMI_ID" >> $GITHUB_OUTPUT
           else
             echo "No new AMI was created"
-            echo "AMI_CREATED=false" >> $GITHUB_OUTPUT
+            echo "AWS_AMI_CREATED=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Share AMI with Demo Account
-        if: steps.packer.outputs.AMI_CREATED == 'true'
-        run: |
-          aws ec2 modify-image-attribute --image-id ${{ steps.packer.outputs.AMI_ID }} --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}'
+          if [ -n "$GCP_IMAGE_ID" ]; then
+            echo "New GCP Image created: $GCP_IMAGE_ID"
+            echo "GCP_IMAGE_CREATED=true" >> $GITHUB_OUTPUT
+            echo "GCP_IMAGE_ID=$GCP_IMAGE_ID" >> $GITHUB_OUTPUT
+          else
+            echo "No new GCP Image was created"
+            echo "GCP_IMAGE_CREATED=false" >> $GITHUB_OUTPUT
+          fi
 
+      # Share the AMI with the DEMO AWS account
+      - name: Share AMI with Demo Account
+        if: steps.packer.outputs.AWS_AMI_CREATED == 'true'
+        run: |
+          aws ec2 modify-image-attribute --image-id ${{ steps.packer.outputs.AWS_AMI_ID }} --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}'
+
+      # Share the image with the DEMO GCP project
+      - name: Share GCP Image with DEMO Account
+        if: steps.packer.outputs.GCP_IMAGE_CREATED == 'true'
+        run: |
+          gcloud compute images add-iam-policy-binding ${{ steps.packer.outputs.GCP_IMAGE_ID }} \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --member="projectEditor:${{ secrets.GCP_DEMO_PROJECT_ID }}" \
+            --role="roles/compute.imageUser"
