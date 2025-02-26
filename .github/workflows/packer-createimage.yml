@@ -127,6 +127,6 @@ jobs:
         if: steps.packer.outputs.GCP_IMAGE_CREATED == 'true'
         run: |
           gcloud compute images add-iam-policy-binding ${{ steps.packer.outputs.GCP_IMAGE_ID }} \
-            --project=${{ secrets.GCP_PROJECT_ID }} \
-            --member="projectEditor:${{ secrets.GCP_DEMO_PROJECT_ID }}" \
-            --role="roles/compute.imageUser"
+          --project=${{ secrets.GCP_PROJECT_ID }} \
+          --member="serviceAccount:${{ secrets.GCP_DEMO_ACCOUNT_EMAIL }}" \
+          --role="roles/compute.imageUser"
