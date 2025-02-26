@@ -96,7 +96,7 @@ jobs:
 
           AWS_AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
           
-          GCP_IMAGE_ID=$(gcloud compute images list --project ${{ secrets.GCP_PROJECT_ID }} --filter="name~webapp-" --sort-by="~creationTimestamp" --limit=1 --format="value(NAME)")
+          GCP_IMAGE_ID=$(gcloud compute images list --no-standard-images --format="table(NAME,CREATION_TIMESTAMP)" --sort-by="CREATION_TIMESTAMP" | tail -n 1)
 
           if [ -n "$AWS_AMI_ID" ]; then
             echo "New AMI created: $AWS_AMI_ID"

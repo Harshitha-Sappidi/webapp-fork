@@ -48,7 +48,8 @@ source "googlecompute" "gcp-image" {
 
 # Build Configuration for provisioning and uploading files
 build {
-  sources = ["source.amazon-ebs.my-ami", "source.googlecompute.gcp-image"]
+  #sources = ["source.amazon-ebs.my-ami", "source.googlecompute.gcp-image"]
+  sources = ["source.googlecompute.gcp-image"]
 
   provisioner "file" {
     source      = "./webapp.zip"
