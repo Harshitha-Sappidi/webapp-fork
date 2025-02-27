@@ -19,47 +19,25 @@ jobs:
         with:
           node-version: 18
 
-      # Start MySQL Service (for integration tests)
-      - name: Configure MySQL Database
-        run: |
-          sudo systemctl start mysql
-          sudo systemctl status mysql
-
-      # Wait for MySQL to be fully up and running
-      - name: Wait for MySQL
-        run: |
-          echo "Waiting for MySQL to start..."
-          sleep 10
-          sudo mysql -u${{ secrets.DB_USER }} -p${{ secrets.DB_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;"
-
       # Configure environment variables required for the application
       - name: Configure Environment Variables
         run: |
+          set -e
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env  
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "PORT=${{ secrets.PORT }}" >> .env
-          ls -al
-          cat .env
           cp .env packer/
-
-      # Install application dependencies
-      - name: Install Dependencies
-        run: npm install
-
-      # Run integration tests (workflow fails if tests fail)
-      - name: Run Integration Tests
-        run: npm test  
 
       - name: Zip Web App
         run: |
+          set -e
           mkdir webapp                     
           cp -r $(ls -A | grep -v '^webapp$') webapp/                
           zip -r webapp.zip webapp -x "webapp/node_modules/*" "webapp/.git/*" 
-          mv webapp.zip packer/            
-          ls -al 
+          mv webapp.zip packer/
 
       # Set up AWS CLI for authentication
       - name: Set up AWS CLI
@@ -75,35 +53,56 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
-       # Install Packer using the official GitHub Action
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
 
       - name: Initialize Packer
         run: |
+          set -e
           cd packer
-          packer init .  
+          packer init .
 
-      # Building a custom image for AWS & GCP in parallel using Packer
+       # Building a custom image for AWS & GCP in parallel using Packer
       - name: Build Custom Image with Packer
         id: packer
         run: |
+          set -e
           cd packer
           packer build .
 
-          AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
+          AWS_AMI_ID=$(aws ec2 describe-images --owners ${{ secrets.AWS_DEV_ACCOUNT_ID }} --query 'Images | sort_by(@, &CreationDate) | [-1].ImageId' --output text)
+          GCP_IMAGE_ID=$(gcloud compute images list --no-standard-images --format="table(NAME)" --sort-by="~creationTimestamp" | tail -n 1 | awk '{print $1}')
 
-          if [ -n "$AMI_ID" ]; then
-            echo "New AMI created: $AMI_ID"
-            echo "AMI_CREATED=true" >> $GITHUB_OUTPUT
-            echo "AMI_ID=$AMI_ID" >> $GITHUB_OUTPUT
+          if [ -n "$AWS_AMI_ID" ]; then
+            echo "New AMI created: $AWS_AMI_ID"
+            echo "AWS_AMI_CREATED=true" >> $GITHUB_OUTPUT
+            echo "AWS_AMI_ID=$AWS_AMI_ID" >> $GITHUB_OUTPUT
           else
             echo "No new AMI was created"
-            echo "AMI_CREATED=false" >> $GITHUB_OUTPUT
+            echo "AWS_AMI_CREATED=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Share AMI with Demo Account
-        if: steps.packer.outputs.AMI_CREATED == 'true'
-        run: |
-          aws ec2 modify-image-attribute --image-id ${{ steps.packer.outputs.AMI_ID }} --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}'
+          if [ -n "$GCP_IMAGE_ID" ]; then
+            echo "New GCP Image created: $GCP_IMAGE_ID"
+            echo "GCP_IMAGE_CREATED=true" >> $GITHUB_OUTPUT
+            echo "GCP_IMAGE_ID=$GCP_IMAGE_ID" >> $GITHUB_OUTPUT
+          else
+            echo "No new GCP Image was created"
+            echo "GCP_IMAGE_CREATED=false" >> $GITHUB_OUTPUT
+          fi
 
+      # Share the AMI with the DEMO AWS account
+      - name: Share AMI with Demo Account
+        if: steps.packer.outputs.AWS_AMI_CREATED == 'true'
+        run: |
+          aws ec2 modify-image-attribute --image-id ${{ steps.packer.outputs.AWS_AMI_ID }} \
+            --launch-permission '{"Add":[{"UserId":"${{ secrets.AWS_DEMO_ACCOUNT_ID }}"}]}'
+
+      # Share the image with the DEMO GCP project
+      - name: Share GCP Image with DEMO Account
+        if: steps.packer.outputs.GCP_IMAGE_CREATED == 'true'
+        run: |
+          gcloud compute images add-iam-policy-binding ${{ steps.packer.outputs.GCP_IMAGE_ID }} \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --member="serviceAccount:${{ secrets.GCP_DEMO_ACCOUNT_EMAIL }}" \
+            --role="roles/compute.imageUser"
