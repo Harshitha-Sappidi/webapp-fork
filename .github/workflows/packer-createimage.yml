@@ -1,12 +1,9 @@
 name: Packer Create Image for Node.js App
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-  # push:
-  #   branches:
-  #      - main 
+       - main 
 jobs:
   packer-buildimage:
     runs-on: ubuntu-latest
