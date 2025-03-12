@@ -4,9 +4,9 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-# variable "aws_profile" {
-#   default = "dev"
-# }
+variable "aws_profile" {
+  default = "dev"
+}
 
 variable "source_ami" {
   type    = string
