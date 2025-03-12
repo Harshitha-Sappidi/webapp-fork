@@ -70,9 +70,9 @@ build {
   }
   # Cleanup provisioner to remove unnecessary dependencies
   provisioner "shell" {
-       inline = [
+    inline = [
       "sudo apt-get remove -y git",
-         "sudo apt-get autoremove -y",
+      "sudo apt-get autoremove -y",
       "sudo apt-get clean",
       "sudo rm -rf /usr/bin/git*",
       "sudo rm -rf /usr/lib/git-core"
