@@ -50,6 +50,12 @@ source "googlecompute" "gcp-image" {
 build {
   sources = ["source.amazon-ebs.my-ami", "source.googlecompute.gcp-image"]
 
+
+  provisioner "file" {
+    source      = "./.env"
+    destination = "/tmp/.env"
+  }
+
   provisioner "file" {
     source      = "./webapp.zip"
     destination = "/tmp/webapp.zip"
