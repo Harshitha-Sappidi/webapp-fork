@@ -56,11 +56,6 @@ build {
   }
 
   provisioner "file" {
-    source      = "./.env"
-    destination = "/tmp/.env"
-  }
-
-  provisioner "file" {
     source      = "./webapp.service"
     destination = "/tmp/webapp.service"
   }
