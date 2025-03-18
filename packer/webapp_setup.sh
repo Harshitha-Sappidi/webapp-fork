@@ -34,24 +34,6 @@ rm /tmp/webapp.zip
 cd /opt/csye6225/webapp || exit  # Exit if directory doesn't exist
 sudo -u csye6225 npm install
 
-# Install MySQL database server
-sudo apt-get update
-sudo apt-get install -y mysql-server
-
-# Start MySQL service and verify its status
-sudo systemctl start mysql
-sudo systemctl status mysql
-sleep 10
-
-# Secure MySQL installation
-sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';"
-sudo mysql -e "FLUSH PRIVILEGES; EXIT;"
-# Create the sample database if it doesn't already exist
-sudo mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`sample_db\`;"
-
-# Restart MySQL service to apply any configuration changes
-sudo systemctl restart mysql
-
 # Move the service configuration file to systemd's directory and reload the systemd manager to recognize it
 sudo mv /tmp/webapp.service /etc/systemd/system
 sudo systemctl daemon-reload
