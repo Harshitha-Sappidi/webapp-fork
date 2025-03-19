@@ -18,26 +18,17 @@ const File = sequelize.define('File', {
   fileSize: {
     type: DataTypes.INTEGER,
     allowNull: false,
-  },
-  s3Key: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
+  },  
   fileUrl: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  etag: {
+  storageClass: {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  contentLength: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-  },
-  lastModified: {
-    type: DataTypes.DATE,
+  etag: {
+    type: DataTypes.STRING,
     allowNull: true,
   },
   serverSideEncryption: {

@@ -37,5 +37,6 @@ sudo mv /tmp/webapp.service /etc/systemd/system
 sudo systemctl daemon-reload
 
 # Restart, enable, and check the status of the webapp service
-# sudo systemctl enable webapp.service
-# sudo systemctl status webapp.service
+sudo systemctl restart webapp.service
+sudo systemctl enable webapp.service
+sudo systemctl status webapp.service

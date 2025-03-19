@@ -23,6 +23,6 @@ exports.deleteFile = async (req, res) => {
     await fileService.deleteFile(req.params.id);
     return res.status(204).send();
   } catch (error) {
-    return res.status(403).json({ error: error.message });
+    return res.status(404).json({ error: error.message });
   }
 };
