@@ -17,6 +17,7 @@ exports.uploadFile = async (file, userId) => {
     Body: file.buffer,
     ContentType: file.mimetype,
     ServerSideEncryption: 'AES256',
+    StorageClass: 'Standard'
   };
 
   // Step 3: Upload file to S3
