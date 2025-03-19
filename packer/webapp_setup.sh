@@ -18,7 +18,6 @@ sudo useradd -r -s /usr/sbin/nologin -m csye6225
 # Setup application directory and extract the webapp
 sudo mkdir -p /opt/csye6225
 sudo unzip /tmp/webapp.zip -d /opt/csye6225
-sudo mv /tmp/.env /opt/csye6225/webapp
 
 # Change ownership and permissions for the application folder
 # The 'csye6225' user should own the directory for security, and read/write/execute permissions are set
@@ -30,7 +29,6 @@ sudo chmod -R 755 /opt/csye6225/webapp
 rm /tmp/webapp.zip 
 
 # Install Node.js dependencies for the webapp
-
 cd /opt/csye6225/webapp || exit  # Exit if directory doesn't exist
 sudo -u csye6225 npm install
 
