@@ -28,6 +28,22 @@ const File = sequelize.define('File', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  etag: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  contentLength: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  lastModified: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  serverSideEncryption: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  }
 }, {
   timestamps: true,
 });

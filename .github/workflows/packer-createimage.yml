@@ -18,19 +18,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-
-      # Configure environment variables required for the application
-      - name: Configure Environment Variables
-        run: |
-          set -e
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env  
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "PORT=${{ secrets.PORT }}" >> .env
-          cp .env packer/
-
+          
+      #Make webapp.zip inside packer
       - name: Zip Web App
         run: |
           set -e
