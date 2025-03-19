@@ -22,7 +22,7 @@ exports.uploadFile = async (file, userId) => {
   // Step 3: Upload file to S3
   const uploadResult = await s3.upload(params).promise();
 
-// Step 4: Fetch metadata using headObject after upload
+  // Step 4: Fetch metadata using headObject after upload
   const metadata = await s3.headObject({
     Bucket: process.env.S3_BUCKET_NAME,
     Key: s3Key,
@@ -34,13 +34,10 @@ exports.uploadFile = async (file, userId) => {
     fileName: file.originalname,
     fileType: file.mimetype,
     fileSize: file.size,
-    s3Key,
     fileUrl: uploadResult.Location,
     etag: metadata.ETag, 
-    contentLength: metadata.ContentLength,
-    lastModified: metadata.LastModified, 
     serverSideEncryption: metadata.ServerSideEncryption || null,
-  
+    storageClass: metadata.StorageClass || null,
   });
 
   // Step 6 : Returning the simplified response
@@ -56,15 +53,28 @@ exports.uploadFile = async (file, userId) => {
 exports.getFileById = async (fileId) => {
   const file = await File.findByPk(fileId);
   if (!file) throw new Error('File not found');
-  return file;
-};
+
+  // Return only the required fields
+  return {
+    file_name: file.fileName,
+    id: file.id,
+    url: file.fileUrl,
+    upload_date: file.createdAt.toISOString(),
+  };
+};;
 
 // Delete file by ID
 exports.deleteFile = async (fileId) => {
   const file = await File.findByPk(fileId);
   if (!file) throw new Error('File not found');
 
-  await s3.deleteObject({ Bucket: process.env.S3_BUCKET_NAME, Key: file.s3Key }).promise();
+  const key = file.fileUrl.split('/').pop();
+
+  await s3.deleteObject({
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: key,
+  }).promise();
+
   await file.destroy();
 
   return { message: 'File deleted successfully' };
