@@ -1,13 +1,12 @@
 [Unit]
 Description=CSYE 6225 WebApp
-ConditionPathExists=/opt/csye6225/webapp/.env
+ConditionPathExists=/opt/csye6225/webapp
 After=network.target
 
 [Service]
 Type=simple
 User=csye6225
 Group=csye6225
-EnvironmentFile=/opt/csye6225/webapp/.env
 ExecStart=/usr/bin/npm start
 WorkingDirectory=/opt/csye6225/webapp
 SuccessExitStatus=143
