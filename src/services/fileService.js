@@ -17,7 +17,7 @@ exports.uploadFile = async (file, userId) => {
     Body: file.buffer,
     ContentType: file.mimetype,
     ServerSideEncryption: 'AES256',
-    StorageClass: 'Standard'
+    StorageClass: 'STANDARD',
   };
 
   // Step 3: Upload file to S3
@@ -38,7 +38,7 @@ exports.uploadFile = async (file, userId) => {
     fileUrl: uploadResult.Location,
     etag: metadata.ETag, 
     serverSideEncryption: metadata.ServerSideEncryption || null,
-    storageClass: metadata.StorageClass || null,
+    storageClass: metadata.StorageClass || 'STANDARD',
   });
 
   // Step 6 : Returning the simplified response

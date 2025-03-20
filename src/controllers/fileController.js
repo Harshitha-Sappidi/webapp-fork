@@ -1,4 +1,6 @@
 const fileService = require('../services/fileService');
+const healthCheckController = require('../controllers/healthController');
+const { response } = require('../app');
 
 const headers = {
   'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -6,45 +8,47 @@ const headers = {
   'X-Content-Type-Options': 'nosniff',
 };
 
-// Common error handling wrapper
-const handleRequest = async (handler, res) => {
+exports.uploadFile = async (req, res) => {
   try {
-    await handler();
+    const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
+
+    if (healthCheckResult.statusCode === 503) {
+      return res.status(503).set(headers).send()
+    }
+
+    const file = await fileService.uploadFile(req.file, req.body.id);
+    return res.status(201).json(file);
   } catch (error) {
-    console.error('Error:', error);
-
-    // Return 503 if connection issues or database is down
-    if (error.code === 'ECONNREFUSED' || error.message.includes('Connection refused')) {
-      return res.status(503).set(headers).json({ error: 'Service temporarily unavailable. Please try again later.' });
-    }
-
-    // Return 404 for not found errors
-    if (error.name === 'NotFoundError') {
-      return res.status(404).set(headers).json({ error: error.message });
-    }
-
-    // Return 400 for any other bad request
-    return res.status(400).set(headers).json({ error: error.message });
+    return res.status(400).set(headers).send()
   }
 };
 
-exports.uploadFile = async (req, res) => {
-  await handleRequest(async () => {
-    const file = await fileService.uploadFile(req.file, req.body.id);
-    return res.status(201).set(headers).json(file);
-  }, res);
-};
-
 exports.getFile = async (req, res) => {
-  await handleRequest(async () => {
+  try {
+    const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
+
+    if (healthCheckResult.statusCode === 503) {
+      return res.status(503).set(headers).send()
+    }
+
     const file = await fileService.getFileById(req.params.id);
-    return res.status(200).set(headers).json(file);
-  }, res);
+    return res.status(200).json(file);
+  } catch (error) {
+    return res.status(404).set(headers).send()
+  }
 };
 
 exports.deleteFile = async (req, res) => {
-  await handleRequest(async () => {
+  try {
+    const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
+
+    if (healthCheckResult.statusCode === 503) {
+      return res.status(503).set(headers).send()
+    }
+
     await fileService.deleteFile(req.params.id);
-    return res.status(204).set(headers).send();
-  }, res);
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(404).set(headers).send()
+  }
 };
