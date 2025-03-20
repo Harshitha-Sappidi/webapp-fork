@@ -1,6 +1,5 @@
 const fileService = require('../services/fileService');
 const healthCheckController = require('../controllers/healthController');
-const { response } = require('../app');
 
 const headers = {
   'Cache-Control': 'no-cache, no-store, must-revalidate',
