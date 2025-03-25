@@ -1,7 +1,8 @@
 const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
 const File = require('../models/file');
-const metrics = require('../services/metrics');
+const { trackS3Operation, trackDbQuery } = require('../services/metrics'); // Import the metrics logger
+const logger = require('../services/logger'); 
 require('dotenv').config();
 
 const s3 = new AWS.S3({ region: process.env.AWS_REGION });
@@ -25,17 +26,15 @@ exports.uploadFile = async (file, userId) => {
   const s3Start = Date.now();
   const uploadResult = await s3.upload(params).promise();
   const s3Duration = Date.now() - s3Start;
-  metrics.recordExecutionTime('s3.upload', s3Duration);
+  trackS3Operation('upload', s3Duration); // Track S3 upload operation
+
+  logger.info(`File uploaded to S3: ${uploadResult.Location}`);
 
   // Step 4: Fetch metadata using headObject after upload
-  const metadataStart = Date.now();
   const metadata = await s3.headObject({
     Bucket: process.env.S3_BUCKET_NAME,
     Key: s3Key,
   }).promise();
-  const metadataDuration = Date.now() - metadataStart;
-  metrics.recordExecutionTime('s3.headObject', metadataDuration);
-
 
   // Step 5: Save file metadata in the database
   const dbStart = Date.now();
@@ -50,9 +49,10 @@ exports.uploadFile = async (file, userId) => {
     storageClass: metadata.StorageClass || 'STANDARD',
   });
   const dbDuration = Date.now() - dbStart;
-  metrics.recordExecutionTime('database.query', dbDuration);
+  trackDbQuery('create', dbDuration); 
 
   // Step 6 : Returning the simplified response
+  logger.info(`File stored in DB: ${newFile.fileName}, File ID: ${newFile.id}`);
   return {
     file_name: newFile.fileName,
     id: newFile.id,
@@ -63,9 +63,17 @@ exports.uploadFile = async (file, userId) => {
 
 // Get file by ID
 exports.getFileById = async (fileId) => {
+  const startTime = Date.now();
   const file = await File.findByPk(fileId);
-  if (!file) throw new Error('File not found');
+  if (!file) {
+    logger.warn(`File not found: File ID: ${fileId}`);
+    throw new Error('File not found');
+  }
+  const duration = Date.now() - startTime;
+  trackDbQuery('find', duration); // Track DB query execution time
 
+  logger.info(`File fetched from DB: ${file.fileName}, File ID: ${file.id}`);
+   
   // Return only the required fields
   return {
     file_name: file.fileName,
@@ -77,21 +85,23 @@ exports.getFileById = async (fileId) => {
 
 // Delete file by ID
 exports.deleteFile = async (fileId) => {
+  const startTime = Date.now();
   const file = await File.findByPk(fileId);
-  if (!file) throw new Error('File not found');
-
+  if (!file) {
+    logger.warn(`File not found for deletion: File ID: ${fileId}`);
+    throw new Error('File not found');
+  }
   const key = file.fileUrl.split('/').pop();
 
   const s3Start = Date.now();
   await s3.deleteObject({ Bucket: process.env.S3_BUCKET_NAME, Key: key }).promise();
   const s3Duration = Date.now() - s3Start;
-  metrics.recordExecutionTime('s3.deleteObject', s3Duration);
+  trackS3Operation('delete', s3Duration); // Track S3 delete operation
 
-  // Start Timer for Database Delete
-  const dbDeleteStart = Date.now();
   await file.destroy();
-  const dbDeleteDuration = Date.now() - dbDeleteStart;
-  metrics.recordExecutionTime('database.query', dbDeleteDuration);
+  const dbDuration = Date.now() - startTime;
+  trackDbQuery('delete', dbDuration); // Track DB delete operation
 
+  logger.info(`File deleted from DB and S3: File ID: ${fileId}`);
   return { message: 'File deleted successfully' };
 };
