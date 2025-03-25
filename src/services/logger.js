@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const winston = require('winston');
 
-const logFilePath = '/opt/csye6225/webapp/mywebapp.log';
+const logFilePath = '/opt/csye6225/webapp/logs/mywebapp.log';
 
 // Ensure log directory exists
 const logDir = path.dirname(logFilePath);
