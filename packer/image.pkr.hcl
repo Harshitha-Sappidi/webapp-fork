@@ -48,7 +48,7 @@ source "googlecompute" "gcp-image" {
 
 # Build Configuration for provisioning and uploading files
 build {
-  sources = ["source.amazon-ebs.my-ami", "source.googlecompute.gcp-image"]
+  sources = ["source.amazon-ebs.my-ami"]
 
   provisioner "file" {
     source      = "./webapp.zip"
@@ -58,6 +58,11 @@ build {
   provisioner "file" {
     source      = "./webapp.service"
     destination = "/tmp/webapp.service"
+  }
+  # Upload CloudWatch Configuration
+  provisioner "file" {
+    source      = "./cloudwatch-config.json"
+    destination = "/tmp/cloudwatch-config.json"
   }
   # Execute the setup script to install Node.js, extract the app, and configure it
   provisioner "shell" {
