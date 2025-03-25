@@ -54,4 +54,9 @@ const trackDbQuery = (operation, durationMs) => {
   client.timing(`db.${operation}.time`, durationMs);
 };
 
-export { trackApiUsage, trackApiError, trackS3Operation, trackDbQuery };
+module.exports = {
+  trackApiUsage,
+  trackApiError,
+  trackS3Operation,
+  trackDbQuery
+};
