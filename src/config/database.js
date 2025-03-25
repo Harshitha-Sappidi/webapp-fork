@@ -1,7 +1,7 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 const metrics = require('../services/metrics');
-const logger = require('../logger');
+const logger = require('../services/logger');
 
 const sequelize = new Sequelize(
   process.env.DB_NAME, 
