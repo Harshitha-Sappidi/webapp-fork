@@ -1,5 +1,7 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
+const { trackDbQuery } = require('../services/metrics');
+const logger = require('../services/logger');
 
 const sequelize = new Sequelize(
   process.env.DB_NAME, 
@@ -13,16 +15,24 @@ const sequelize = new Sequelize(
 );
 
 const connectDB = async () => {
+  const startTime = Date.now();
   try {
+    logger.info('Attempting to connect to MySQL database...');
     await sequelize.authenticate();
-    console.log('Connected to the MySQL database successfully.');
+    const duration = Date.now() - startTime;
+    trackDbQuery('connect', duration);
+    logger.info('Connected to the MySQL database successfully.');
 
     // To Bootstrap the database
+    const syncStartTime = Date.now(); // Start time for schema sync
     await sequelize.sync({ alter: true });
-    console.log('Database schema bootstrapped successfully.');
+    const syncDuration = Date.now() - syncStartTime;
+    trackDbQuery('sync', syncDuration); // Track database schema sync performance
+    logger.info(`Database schema bootstrapped successfully.`);
+    logger.info(`Schema sync took ${syncDuration}ms`);
   } catch (error) {
-    console.error('Unable to connect or bootstrap the database:', error);
-    process.exit(1);
+    logger.error(`Unable to connect or bootstrap the database: ${error.message}`);
+    process.exit(1); // Exit the process if connection fails
   }
 };
 
