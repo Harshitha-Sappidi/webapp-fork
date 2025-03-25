@@ -15,7 +15,7 @@ const sequelize = new Sequelize(
 );
 
 const connectDB = async () => {
-  const start = Date.now();
+  const startTime = Date.now();
   try {
     logger.info('Attempting to connect to MySQL database...');
     await sequelize.authenticate();
