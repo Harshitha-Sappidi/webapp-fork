@@ -21,7 +21,7 @@
 
 // metrics.js
 
-const client = require('./statsdClient');
+const client = require('./statdClient');
 
 const trackApiUsage = (apiPath, duration) => {
   // Increment API call count
