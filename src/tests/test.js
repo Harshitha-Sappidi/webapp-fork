@@ -1,6 +1,7 @@
 const request = require('supertest'); // Use 'supertest' for API testing
 const app = require('../app');
 const db = require('../models/healthCheck');
+const statsdClient = require('../services/statsdClient'); 
 
 describe("Health Check API Tests", () => {
   
@@ -14,6 +15,11 @@ describe("Health Check API Tests", () => {
     await db.destroy({ where: {}, truncate: true, restartIdentity: true });
     // Closing database connection to prevent open handles
     await db.sequelize.close();
+
+    // Close the StatsD client to prevent hanging UDP socket
+    if (statsdClient && statsdClient.socket) {
+      statsdClient.socket.close();
+    }
   });
 
   // Test for inserting a record and returning 200 OK
