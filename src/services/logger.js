@@ -1,4 +1,4 @@
-import { createLogger, format, transports } from 'winston';
+const { createLogger, format, transports } = require('winston');
 
 const logFilePath = '/opt/csye6225/webapp/logs/mywebapp.log';
 
@@ -20,4 +20,4 @@ const logger = createLogger({
     ],
 });
 
-export default logger;
+module.exports = logger;
