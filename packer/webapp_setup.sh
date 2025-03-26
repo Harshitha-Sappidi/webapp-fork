@@ -41,7 +41,13 @@ sudo systemctl daemon-reload
 # echo "Checking for CloudWatch Agent..."
 if [[ ! -f /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl ]]; then
     echo "CloudWatch Agent not found. Installing..."
-    sudo apt-get install -y amazon-cloudwatch-agent
+    cd /tmp
+    wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+    sudo dpkg -i amazon-cloudwatch-agent.deb
+    sudo systemctl enable amazon-cloudwatch-agent
+    sudo systemctl start amazon-cloudwatch-agent
+    sudo systemctl status amazon-cloudwatch-agent
+
 fi
 
 # echo "Starting CloudWatch Agent with custom config..."
