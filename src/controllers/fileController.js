@@ -1,7 +1,7 @@
 const fileService = require('../services/fileService');
 const healthCheckController = require('../controllers/healthController');
 const logger = require('../services/logger');
-const { trackApiUsage } = require('../services/metrics'); 
+const trackApiUsage = require('../services/metrics'); 
 
 const headers = {
   'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -11,6 +11,7 @@ const headers = {
 
 // Upload file API handler
 exports.uploadFile = async (req, res) => {
+  const startTime = Date.now();  // Start timer
   logger.info(`UploadFile API called, File ID: ${req.body.id}`);
 
   try {
@@ -22,12 +23,14 @@ exports.uploadFile = async (req, res) => {
     }
 
     const file = await fileService.uploadFile(req.file, req.body.id);
-    trackApiUsage(req.route.path, req.method); 
+    const duration = Date.now() - startTime; 
+    trackApiUsage(req.route.path, req.method, duration); 
 
     logger.info(`File uploaded successfully: ${file.file_name}, File ID: ${file.id}`);
     return res.status(201).json(file);
   } catch (error) {
-    trackApiUsage(req.route.path, req.method); 
+    const duration = Date.now() - startTime; 
+    trackApiUsage(req.route.path, req.method, duration); 
     logger.error(`Error uploading file: ${error.message}`, { stack: error.stack });
 
     return res.status(400).set(headers).send();
@@ -36,6 +39,7 @@ exports.uploadFile = async (req, res) => {
 
 // Get file API handler
 exports.getFile = async (req, res) => {
+  const startTime = Date.now();
   try {
     const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
 
@@ -45,12 +49,17 @@ exports.getFile = async (req, res) => {
     }
 
     const file = await fileService.getFileById(req.params.id);
-    trackApiUsage(req.route.path, req.method);
-    
+    const duration = Date.now() - startTime;
+
+    trackApiUsage(req.route.path, req.method, duration);
     logger.info(`File fetched successfully: ${file.file_name}, File ID: ${file.id}`);
+    
     return res.status(200).json(file);
   } catch (error) {
-    trackApiUsage(req.route.path, req.method); 
+    const duration = Date.now() - startTime; 
+    trackApiUsage(req.route.path, req.method, duration); 
+
+    // Log the error message and stack trace
     logger.error(`Error fetching file: ${error.message}`, { stack: error.stack });
 
     return res.status(404).set(headers).send();
@@ -59,6 +68,7 @@ exports.getFile = async (req, res) => {
 
 // Delete file API handler
 exports.deleteFile = async (req, res) => {
+  const startTime = Date.now();
   try {
     const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
 
@@ -68,12 +78,15 @@ exports.deleteFile = async (req, res) => {
     }
 
     await fileService.deleteFile(req.params.id);
-    trackApiUsage(req.route.path, req.method);
+    const duration = Date.now() - startTime;
+    trackApiUsage(req.route.path, req.method, duration);
 
     logger.info(`File deleted successfully: File ID: ${req.params.id}`);
     return res.status(204).send();
   } catch (error) {
-    trackApiUsage(req.route.path, req.method);
+    const duration = Date.now() - startTime; 
+    trackApiUsage(req.route.path, req.method, duration);
+
     logger.error(`Error deleting file: ${error.message}`, { stack: error.stack });
 
     return res.status(404).set(headers).send();

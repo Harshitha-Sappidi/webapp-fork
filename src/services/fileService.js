@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
-// Step 1: Generate unique file ID and S3 key
+  // Step 1: Generate unique file ID and S3 key
 exports.uploadFile = async (file, userId) => {
   const fileId = uuidv4();
   const s3Key = `${fileId}-${file.originalname}`;
@@ -24,8 +24,10 @@ exports.uploadFile = async (file, userId) => {
 
   try {
     // Step 3: Upload file to S3
+    const s3Start = Date.now();
     const uploadResult = await s3.upload(params).promise();
-    trackS3Operation('upload');
+    const s3Duration = Date.now() - s3Start;
+    trackS3Operation('upload', s3Duration); 
 
     logger.info(`File uploaded successfully to S3: ${uploadResult.Location}`);
 
@@ -36,6 +38,7 @@ exports.uploadFile = async (file, userId) => {
     }).promise();
 
     // Step 5: Save file metadata in the database
+    const dbStart = Date.now();
     const newFile = await File.create({
       id: fileId,
       fileName: file.originalname,
@@ -46,7 +49,8 @@ exports.uploadFile = async (file, userId) => {
       serverSideEncryption: metadata.ServerSideEncryption || null,
       storageClass: metadata.StorageClass || 'STANDARD',
     });
-    trackDbQuery('create');
+    const dbDuration = Date.now() - dbStart;
+    trackDbQuery('create', dbDuration); 
 
     logger.info(`File metadata stored in DB: ${newFile.fileName}, File ID: ${newFile.id}`);
 
@@ -66,12 +70,14 @@ exports.uploadFile = async (file, userId) => {
 // Get file by ID
 exports.getFileById = async (fileId) => {
   try {
+    const startTime = Date.now();
     const file = await File.findByPk(fileId);
     if (!file) {
       logger.warn(`File not found in DB: File ID: ${fileId}`);
       throw new Error('File not found');
     }
-    trackDbQuery('find');
+    const duration = Date.now() - startTime;
+    trackDbQuery('find', duration); 
 
     logger.info(`File fetched from DB: ${file.fileName}, File ID: ${file.id}`);
     
@@ -91,6 +97,7 @@ exports.getFileById = async (fileId) => {
 // Delete file by ID
 exports.deleteFile = async (fileId) => {
   try {
+    const startTime = Date.now();
     const file = await File.findByPk(fileId);
     if (!file) {
       logger.warn(`File not found for deletion in DB: File ID: ${fileId}`);
@@ -99,15 +106,18 @@ exports.deleteFile = async (fileId) => {
     const key = file.fileUrl.split('/').pop();
 
     // Track DB query for file deletion check
-    trackDbQuery('find');
+    const dbDuration = Date.now() - startTime;
+    trackDbQuery('find', dbDuration);
 
     // S3 delete operation
+    const s3Start = Date.now();
     await s3.deleteObject({ Bucket: process.env.S3_BUCKET_NAME, Key: key }).promise();
-    trackS3Operation('delete');
+    const s3Duration = Date.now() - s3Start;
+    trackS3Operation('delete', s3Duration); 
 
     // Delete file from DB
     await file.destroy();
-    trackDbQuery('delete');
+    trackDbQuery('delete', dbDuration); 
 
     logger.info(`File successfully deleted from DB and S3: File ID: ${fileId}`);
     return { message: 'File deleted successfully' };
@@ -116,3 +126,4 @@ exports.deleteFile = async (fileId) => {
     throw new Error('File deletion failed');
   }
 };
+
