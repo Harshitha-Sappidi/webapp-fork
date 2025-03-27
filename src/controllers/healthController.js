@@ -20,7 +20,7 @@ exports.checkHealth = async (req, res, isFileUpload) => {
       
       // Track API usage and DB query time for this error
       trackApiUsage(req.route.path, req.method, Date.now() - startTime);
-      trackDbQuery('health_check', Date.now() - startTime); // Track DB query time on error
+      trackDbQuery('health_check_failure', Date.now() - startTime); // Track DB query time on error
       
       return res.status(400).set(headers).send(); // Bad Request
     }
@@ -31,7 +31,7 @@ exports.checkHealth = async (req, res, isFileUpload) => {
 
     // Track API usage for successful health check request (this involves a DB query)
     trackApiUsage(req.route.path, req.method, duration);
-    trackDbQuery('health_check', duration);
+    trackDbQuery('health_check_success', duration);
 
     logger.info('Health check passed successfully');
     return isFileUpload ? { statusCode: 200 } : res.status(200).set(headers).send(); // OK
@@ -40,7 +40,7 @@ exports.checkHealth = async (req, res, isFileUpload) => {
 
     // Track API usage for failed health check request
     trackApiUsage(req.route.path, req.method, duration);
-    trackDbQuery('health_check', duration);
+    trackDbQuery('health_check_failure', duration);
 
     logger.warn('Health check failed');
     logger.error(`Health check failed: ${error.message}`);

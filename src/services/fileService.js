@@ -50,7 +50,7 @@ exports.uploadFile = async (file, userId) => {
       storageClass: metadata.StorageClass || 'STANDARD',
     });
     const dbDuration = Date.now() - dbStart;
-    trackDbQuery('create', dbDuration); 
+    trackDbQuery('upload_file', dbDuration); 
 
     logger.info(`File metadata stored in DB: ${newFile.fileName}, File ID: ${newFile.id}`);
 
@@ -77,7 +77,7 @@ exports.getFileById = async (fileId) => {
       throw new Error('File not found');
     }
     const duration = Date.now() - startTime;
-    trackDbQuery('find', duration); 
+    trackDbQuery('get_file', duration); 
 
     logger.info(`File fetched from DB: ${file.fileName}, File ID: ${file.id}`);
     
@@ -107,17 +107,17 @@ exports.deleteFile = async (fileId) => {
 
     // Track DB query for file deletion check
     const dbDuration = Date.now() - startTime;
-    trackDbQuery('find', dbDuration);
+    trackDbQuery('delete_file', dbDuration);
 
     // S3 delete operation
     const s3Start = Date.now();
     await s3.deleteObject({ Bucket: process.env.S3_BUCKET_NAME, Key: key }).promise();
     const s3Duration = Date.now() - s3Start;
-    trackS3Operation('delete', s3Duration); 
+    trackS3Operation('delete_file', s3Duration); 
 
     // Delete file from DB
     await file.destroy();
-    trackDbQuery('delete', dbDuration); 
+    trackDbQuery('delete_file', dbDuration); 
 
     logger.info(`File successfully deleted from DB and S3: File ID: ${fileId}`);
     return { message: 'File deleted successfully' };
