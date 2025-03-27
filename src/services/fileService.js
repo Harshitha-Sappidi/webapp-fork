@@ -50,7 +50,7 @@ exports.uploadFile = async (file, userId) => {
       })
     );
 
-    logger.info({ action: 'uploadFile', message: `File uploaded successfully: ${newFile.fileName}, File ID: ${newFile.id}` });
+    logger.info({ action: 'uploadFile', message: `File uploaded successfully to S3: ${newFile.fileName}, File ID: ${newFile.id}` });
 
     return {
       file_name: newFile.fileName,
@@ -59,7 +59,7 @@ exports.uploadFile = async (file, userId) => {
       upload_date: newFile.createdAt.toISOString(),
     };
   } catch (error) {
-    logger.error({ action: 'uploadFile', message: `Error uploading file: ${error.message}`, stack: error.stack });
+    logger.error({ action: 'uploadFile', message: `Error uploading file to S3: ${error.message}`, stack: error.stack });
     throw error;
   }
 };
@@ -78,7 +78,7 @@ exports.getFileById = async (fileId) => {
       throw new Error('File not found');
     }
 
-    logger.info({ action: 'getFileById', message: `File retrieved successfully: ${file.fileName}, File ID: ${file.id}` });
+    logger.info({ action: 'getFileById', message: `File retrieved from DB successfully: ${file.fileName}, File ID: ${file.id}` });
 
     return {
       file_name: file.fileName,
@@ -123,7 +123,7 @@ exports.deleteFile = async (fileId) => {
 
     return { message: 'File deleted successfully' };
   } catch (error) {
-    logger.error({ action: 'deleteFile', message: `Error deleting file: ${error.message}`, stack: error.stack });
+    logger.error({ action: 'deleteFile', message: `Error deleting file from Database: ${error.message}`, stack: error.stack });
     throw error;
   }
 };
