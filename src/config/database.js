@@ -15,12 +15,9 @@ const sequelize = new Sequelize(
 );
 
 const connectDB = async () => {
-  const startTime = Date.now();
   try {
     logger.info('Attempting to connect to MySQL database...');
     await sequelize.authenticate();
-    const duration = Date.now() - startTime;
-    trackDbQuery('connect', duration);
     logger.info('Connected to the MySQL database successfully.');
 
     // To Bootstrap the database
