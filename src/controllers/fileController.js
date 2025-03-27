@@ -8,18 +8,18 @@ const headers = {
   'Pragma': 'no-cache',
   'X-Content-Type-Options': 'nosniff',
 };
-
+// Upload file API handler
 exports.uploadFile = async (req, res) => {
   await trackApiUsage('uploadFile', async () => {
     try {
       logger.info({
         action: 'uploadFile',
-        message: `API called with file: ${req.file?.originalname || 'No file'} and ID: ${req.body.id}`,
+        message: `UploadFile API called, File ID: ${req.body.id}`,
       });
 
       const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
       if (healthCheckResult.statusCode === 503) {
-        logger.warn({ action: 'uploadFile', message: 'Health check failed: Service Unavailable' });
+        logger.error({ action: 'uploadFile', message: 'Health check failed: Service Unavailable' });
         return res.status(503).set(headers).send();
       }
 
@@ -27,7 +27,7 @@ exports.uploadFile = async (req, res) => {
         fileService.uploadFile(req.file, req.body.id)
       );
 
-      logger.info({ action: 'uploadFile', message: `File uploaded successfully: ${file.fileName}` });
+      logger.info({ action: 'uploadFile', message: `File uploaded successfully: ${file.file_name}, File ID: ${file.id}` });
       return res.status(201).json(file);
     } catch (error) {
       logger.error({ action: 'uploadFile', message: `Error uploading file: ${error.message}`, stack: error.stack });
@@ -35,7 +35,7 @@ exports.uploadFile = async (req, res) => {
     }
   });
 };
-
+// Get file API handler
 exports.getFile = async (req, res) => {
   await trackApiUsage('getFile', async () => {
     try {
@@ -43,21 +43,17 @@ exports.getFile = async (req, res) => {
 
       const healthCheckResult = await healthCheckController.checkHealth(req, res, true);
       if (healthCheckResult.statusCode === 503) {
-        logger.warn({ action: 'getFile', message: 'Health check failed: Service Unavailable' });
+        logger.error({ action: 'getFile', message: 'Health check failed: Service Unavailable' });
         return res.status(503).set(headers).send();
       }
 
       const file = await fileService.getFileById(req.params.id);
-      if (!file) {
-        logger.warn({ action: 'getFile', message: `File not found: ID ${req.params.id}` });
-        return res.status(404).set(headers).send();
-      }
 
-      logger.info({ action: 'getFile', message: `File retrieved successfully: ${file.fileName}` });
+      logger.info({ action: 'getFile', message: `File retrieved successfully: ${file.file_name}, File ID: ${file.id}` });
       return res.status(200).json(file);
-    } catch (error) {
-      logger.error({ action: 'getFile', message: `Error retrieving file: ${error.message}`, stack: error.stack });
-      return res.status(500).set(headers).send();
+    } catch (error) { 
+      logger.error({ action: 'getFile', message: `File not found: ID ${req.params.id}`});
+      return res.status(404).set(headers).send();
     }
   });
 };
@@ -72,21 +68,12 @@ exports.deleteFile = async (req, res) => {
         logger.warn({ action: 'deleteFile', message: 'Health check failed: Service Unavailable' });
         return res.status(503).set(headers).send();
       }
-
-      const result = await trackS3Operation('delete', async () => 
-        fileService.deleteFile(req.params.id)
-      );
-
-      if (!result) {
-        logger.warn({ action: 'deleteFile', message: `File not found: ID ${req.params.id}` });
-        return res.status(404).set(headers).send();
-      }
-
+      await fileService.deleteFile(req.params.id);
       logger.info({ action: 'deleteFile', message: `File with ID ${req.params.id} deleted successfully` });
       return res.status(204).send();
     } catch (error) {
       logger.error({ action: 'deleteFile', message: `Error deleting file: ${error.message}`, stack: error.stack });
-      return res.status(500).set(headers).send();
+      return res.status(404).set(headers).send()
     }
   });
 };

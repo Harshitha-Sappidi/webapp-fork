@@ -12,9 +12,11 @@ const headers = {
 exports.checkHealth = async (req, res, isFileUpload) => {
   return await trackApiUsage('checkHealth', async () => {
     try {
+      logger.info('Health check begin');
       // Ensuring no payload is in the request
       if ((Object.keys(req.body).length > 0 || Object.keys(req.query).length > 0) && !isFileUpload) {
         logger.warn('Health check received with unexpected payload', { query: req.query, body: req.body });
+        logger.error('Health check request contains unexpected payload');
         return res.status(400).set(headers).send(); // Bad Request
       }
 
@@ -32,6 +34,7 @@ exports.checkHealth = async (req, res, isFileUpload) => {
       logger.info('Health check passed');
       return isFileUpload ? { statusCode: 200 } : res.status(200).set(headers).send(); // OK
     } catch (error) {
+      logger.warn('Health check failed');
       logger.error('Health check failed', { error: error.stack });
       return isFileUpload ? { statusCode: 503 } : res.status(503).set(headers).send(); // Service Unavailable
     }
@@ -39,7 +42,9 @@ exports.checkHealth = async (req, res, isFileUpload) => {
 };
 
 // Handle unsupported methods
-exports.handleUnsupportedMethods = (req, res) => {
-  logger.warn('Unsupported method received', { method: req.method, path: req.originalUrl });
-  return res.status(405).set(headers).send(); // Method Not Allowed
+exports.handleUnsupportedMethods = async (req, res) => {
+    await trackApiUsage('unsupportedMethod', async () => {
+    logger.warn('Unsupported method received', { method: req.method, path: req.originalUrl });
+    return res.status(405).set(headers).send(); // Method Not Allowed
+  });
 };
