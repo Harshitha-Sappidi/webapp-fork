@@ -1,35 +1,48 @@
-const client = require('./statsdClient');
-
-const formatApiPath = (apiPath) => apiPath.replace(/\/:[^/]+/g, "/{id}"); // Replace :id with {id}
+const statsd = require('./statsdClient');
 
 /**
- * Tracks API usage, specifying the API path, method, and controller name.
+ * Tracks API call count and duration.
  */
-const trackApiUsage = (apiPath, method, durationMs) => {
-  let formattedPath = formatApiPath(apiPath);
-
-  // Force all GET and DELETE requests for files to be logged under a single path
-  if ((method === "GET" || method === "DELETE") && formattedPath.startsWith("/v1/file/")) {
-    formattedPath = "/v1/file/{id}/count";
-  }
-  const metricName = `api.${method}.${formattedPath.replace(/\//g, '.')}`;
-  
-  client.increment(`${metricName}.count`);
-  client.timing(`${metricName}.time`, durationMs);
+const trackApiUsage = async (apiName, func) => {
+    statsd.increment(`api.${apiName}.count`); // Increment API call count
+    
+    const startTime = Date.now();
+    try {
+        return await func();
+    } finally {
+        const duration = Date.now() - startTime;
+        statsd.timing(`api.${apiName}.duration`, duration); // Log API duration
+    }
 };
 
-const trackS3Operation = (operation, durationMs) => {
-  client.increment(`s3_bucket.${operation}.count`);
-  client.timing(`s3_bucket.${operation}.time`, durationMs);
+/**
+ * Tracks database query execution time.
+ */
+const trackDbQuery = async (queryName, func) => {
+    const startTime = Date.now();
+    try {
+        return await func();
+    } finally {
+        const duration = Date.now() - startTime;
+        statsd.timing(`database.${queryName}.duration`, duration); // Log DB query duration
+    }
 };
 
-const trackDbQuery = (operation, durationMs) => {
-  client.increment(`database.${operation}.count`);
-  client.timing(`database.${operation}.time`, durationMs);
+/**
+ * Tracks S3 operation execution time.
+ */
+const trackS3Operation = async (operationName, func) => {
+    const startTime = Date.now();
+    try {
+        return await func();
+    } finally {
+        const duration = Date.now() - startTime;
+        statsd.timing(`s3.${operationName}.duration`, duration); // Log S3 operation duration
+    }
 };
 
 module.exports = {
-  trackApiUsage,
-  trackS3Operation,
-  trackDbQuery
+    trackApiUsage,
+    trackDbQuery,
+    trackS3Operation
 };
