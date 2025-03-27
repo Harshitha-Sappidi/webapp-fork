@@ -1,6 +1,6 @@
 const { createLogger, format, transports } = require('winston');
 
-const logFilePath = '/opt/csye6225/webapp/logs/mywebapp.log';
+const logFilePath = 'logs/mywebapp.log';
 
 const logger = createLogger({
     level: 'info',
