@@ -13,7 +13,7 @@ exports.uploadFile = async (file, userId) => {
   const s3Key = `${fileId}-${file.originalname}`;
 
   try {
-    logger.info({ action: 'uploadFile', message: `Uploading file: ${file.originalname} for user: ${userId}` });
+    logger.info({ action: 'uploadFile', message: `Uploading file: ${file.originalname}` });
 
     // Upload file to S3 with tracking
     const uploadResult = await trackS3Operation('upload', async () =>
@@ -26,6 +26,7 @@ exports.uploadFile = async (file, userId) => {
         StorageClass: 'STANDARD',
       }).promise()
     );
+    logger.info(`File uploaded to S3: ${uploadResult.Location}`);
 
     // Fetch metadata using headObject after upload
     const metadata = await trackS3Operation('headObject', async () =>
@@ -49,7 +50,7 @@ exports.uploadFile = async (file, userId) => {
       })
     );
 
-    logger.info({ action: 'uploadFile', message: `File uploaded successfully: ${newFile.fileName}` });
+    logger.info({ action: 'uploadFile', message: `File uploaded successfully: ${newFile.fileName}, File ID: ${newFile.id}` });
 
     return {
       file_name: newFile.fileName,
@@ -77,7 +78,7 @@ exports.getFileById = async (fileId) => {
       throw new Error('File not found');
     }
 
-    logger.info({ action: 'getFileById', message: `File retrieved successfully: ${file.fileName}` });
+    logger.info({ action: 'getFileById', message: `File retrieved successfully: ${file.fileName}, File ID: ${file.id}` });
 
     return {
       file_name: file.fileName,
