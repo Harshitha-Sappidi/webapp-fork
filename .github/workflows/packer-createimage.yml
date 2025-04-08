@@ -117,10 +117,13 @@ jobs:
             --version-description "Updated with new AMI" \
             --launch-template-data "{\"ImageId\": \"$AMI_ID\"}"
 
+          # Extract version number
+          VERSION_NUMBER=$(echo "$CREATE_OUTPUT" | jq -r '.LaunchTemplateVersion.VersionNumber')
+
           # Set new launch template version as default
           aws ec2 modify-launch-template \
             --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
-            --default-version "Latest"
+            --default-version "$VERSION_NUMBER"
 
           # Start instance refresh for the Auto Scaling Group
           REFRESH_ID=$(aws autoscaling start-instance-refresh \
