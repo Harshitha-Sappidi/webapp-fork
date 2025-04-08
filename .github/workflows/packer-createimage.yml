@@ -109,23 +109,23 @@ jobs:
       # Set it as default, and trigger instance refresh on the Auto Scaling Group
       - name: Update Launch Template and Refresh Instances
         run: |
-          # Create new launch template version using latest AMI
+          set -e
           AMI_ID="${{ steps.packer.outputs.AWS_AMI_ID }}"
-          aws ec2 create-launch-template-version \
+
+          CREATE_OUTPUT=$(aws ec2 create-launch-template-version \
             --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
             --source-version "1" \
             --version-description "Updated with new AMI" \
-            --launch-template-data "{\"ImageId\": \"$AMI_ID\"}"
+            --launch-template-data "{\"ImageId\": \"$AMI_ID\"}")
 
-          # Extract version number
           VERSION_NUMBER=$(echo "$CREATE_OUTPUT" | jq -r '.LaunchTemplateVersion.VersionNumber')
 
-          # Set new launch template version as default
+          echo "Setting launch template version $VERSION_NUMBER as default"
+
           aws ec2 modify-launch-template \
             --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
             --default-version "$VERSION_NUMBER"
 
-          # Start instance refresh for the Auto Scaling Group
           REFRESH_ID=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name "${{ secrets.AUTOSCALING_GROUP_NAME }}" \
             --preferences '{"MinHealthyPercentage": 50}' \
@@ -134,16 +134,18 @@ jobs:
 
           echo "REFRESH_ID=$REFRESH_ID" >> $GITHUB_ENV
 
-          # Poll every 30 seconds to check refresh status
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
               --auto-scaling-group-name "${{ secrets.AUTOSCALING_GROUP_NAME }}" \
               --query "InstanceRefreshes[?InstanceRefreshId=='$REFRESH_ID'].Status" \
               --output text)
 
+            echo "Refresh status: $STATUS"
+
             if [ "$STATUS" = "Successful" ]; then
               break
             elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then
+              echo "Instance refresh failed or was cancelled."
               exit 1
             else
               sleep 30
