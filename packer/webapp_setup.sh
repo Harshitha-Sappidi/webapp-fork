@@ -32,6 +32,15 @@ rm /tmp/webapp.zip
 cd /opt/csye6225/webapp || exit  # Exit if directory doesn't exist
 sudo -u csye6225 npm install
 
+# Install AWS CLI manually (if missing)
+if ! command -v aws &> /dev/null; then
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    chmod +x ./aws/install
+    sudo ./aws/install
+    rm -rf awscliv2.zip aws
+fi
+
 # Move the service configuration file to systemd's directory and reload the systemd manager to recognize it
 sudo mv /tmp/webapp.service /etc/systemd/system
 sudo systemctl daemon-reload
