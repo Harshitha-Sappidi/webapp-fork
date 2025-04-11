@@ -4,6 +4,14 @@
 sudo apt-get update -y
 sudo apt-get install -y unzip curl
 
+# Install AWS CLI
+echo "Installing AWS CLI..."
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+rm -rf aws awscliv2.zip
+aws --version || { echo "Error: AWS CLI installation failed"; exit 1; }
+
 # Install Node.js and npm (LTS version) for the application
 curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -31,15 +39,6 @@ rm /tmp/webapp.zip
 # Install Node.js dependencies for the webapp
 cd /opt/csye6225/webapp || exit  # Exit if directory doesn't exist
 sudo -u csye6225 npm install
-
-# Install AWS CLI manually (if missing)
-if ! command -v aws &> /dev/null; then
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
-    chmod +x ./aws/install
-    sudo ./aws/install
-    rm -rf awscliv2.zip aws
-fi
 
 # Move the service configuration file to systemd's directory and reload the systemd manager to recognize it
 sudo mv /tmp/webapp.service /etc/systemd/system
