@@ -112,12 +112,17 @@ jobs:
           set -e
           AMI_ID="${{ steps.packer.outputs.AWS_AMI_ID }}"
 
-          CREATE_OUTPUT=$(aws ec2 create-launch-template-version \
-            --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
-            --source-version "1" \
-            --version-description "Updated with new AMI" \
-            --launch-template-data "{\"ImageId\": \"$AMI_ID\"}")
+          LATEST_VERSION=$(aws ec2 describe-launch-template-versions \
+          --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
+          --query 'LaunchTemplateVersions | sort_by(@, &VersionNumber) | [-1].VersionNumber' \
+          --output text)
 
+          CREATE_OUTPUT=$(aws ec2 create-launch-template-version \
+          --launch-template-name "${{ secrets.LAUNCH_TEMPLATE_NAME }}" \
+          --source-version "$LATEST_VERSION" \
+          --version-description "Updated with new AMI" \
+          --launch-template-data "{\"ImageId\": \"$AMI_ID\"}")
+          
           # Extract version number
           VERSION_NUMBER=$(echo "$CREATE_OUTPUT" | jq -r '.LaunchTemplateVersion.VersionNumber')
 
