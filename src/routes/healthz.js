@@ -7,4 +7,8 @@ router.head('/healthz', healthCheckController.handleUnsupportedMethods);
 router.get('/healthz', (req, res) => healthCheckController.checkHealth(req, res, false));
 router.all('/healthz', healthCheckController.handleUnsupportedMethods);
 
+router.head('/cicd', healthCheckController.handleUnsupportedMethods);
+router.get('/cicd', (req, res) => healthCheckController.checkHealth(req, res, false));
+router.all('/cicd', healthCheckController.handleUnsupportedMethods);
+
 module.exports = router;
